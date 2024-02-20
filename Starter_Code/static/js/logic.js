@@ -9,18 +9,56 @@ fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojso
     })
 )
 
+fetch("https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json").then(
+    response => response.json()
+    .then(data2 => {
+        console.log(data2);
+    }).catch(error => {
+        console.log("ErrorOccurred",error)
+    })
+)
+
+
 let url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson"
 
+let url2 ="https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json"
+
 // Define the base StreetMap layer
+
 let streetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19
 });
 
-// Create a Leaflet map
-let map = L.map("map").setView([0, 0], 2);
+// Define the base satelliteMap layer
 
-// Add the base StreetMap layer to the map
-streetMap.addTo(map);
+let satelliteMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  maxZoom: 19
+});
+
+// Define the base outdoorMap layer
+
+let outdoorMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+  maxZoom: 17
+});
+
+// Create a Leaflet map
+let map = L.map("map", {
+    center : [0,0],
+    zoom : 3,
+    layers : [streetMap,satelliteMap,outdoorMap]
+});
+
+let baseLayers = {
+    "street Map" : streetMap,
+    "Satellite Map" : satelliteMap,
+    "Outdoor Map" : outdoorMap
+
+};
+
+
+
+let earthquakeLayer = L.layerGroup();
+let tectonicPlateLayer = L.layerGroup();
 
 // DepthColor Function
 
@@ -45,42 +83,59 @@ function DepthColor(depth){
 
 // EarthQuakes Function
 
-function EarthQuakes(data){
+fetch(url)
+  .then(response => response.json())
+  .then(data => {
     L.geoJSON(data, {
-        pointToLayer: function (feature, latlng) {
-            return L.circleMarker(latlng, {
-              radius: feature.properties.mag * 3,
-              fillColor: DepthColor(feature.geometry.coordinates[2]),
-              color: "black",
-              fillOpacity: 0.5
-            });
-        },
-        onEachFeature: function(feature,layer){
-            layer.bindPopup(`Magnitude ${feature.properties.mag} <br> 
-            Location: ${feature.properties.place}`);
-        }
-    }).addTo(map);
-}
+      pointToLayer: function (feature, latlng) {
+        return L.circleMarker(latlng, {
+          radius: feature.properties.mag * 3,
+          fillColor: DepthColor(feature.geometry.coordinates[2]),
+          color: "black",
+          fillOpacity: 0.5
+        });
+      },
+      onEachFeature: function (feature, layer) {
+        layer.bindPopup(`Magnitude ${feature.properties.mag} <br> Location: ${feature.properties.place}`);
+      }
+    }).addTo(earthquakeLayer);
+  });
 
 
-d3.json(url).then(EarthQuakes).catch(function(error){
-    console.log(`Error occurred ${error}`);
+// Tettonique plaque map 
 
+fetch(url2)
+  .then(response => response.json())
+  .then(data => {
+    L.geoJSON(data, {
+      style: {
+        color: 'blue',
+        weight: 2
+      }
+    }).addTo(tectonicPlateLayer);
 });
 
+let overlayLayers = {
+    "Earthquakes": earthquakeLayer,
+    "Tectonic Plates": tectonicPlateLayer
+};
+
+L.control.layers(baseLayers, overlayLayers).addTo(map);
+streetMap.addTo(map);
 
 
 // Create a legend control
+
 let legend = L.control({position: 'bottomright'});
 
 // Add legend to the map
+
 legend.onAdd = function (map) {
     let div = L.DomUtil.create('div', 'info legend');
-    let labels = ['<strong>Depth</strong>'];
     let depthRanges = ['0-10', '10-30', '30-50', '50-70', '70-90', '90+'];
-    
 
     // Loop through the depth ranges and generate a label with color
+
     for (let i = 0; i < depthRanges.length; i++) {
         div.innerHTML +=
           '<div><span style="background:' +
@@ -90,6 +145,8 @@ legend.onAdd = function (map) {
           "</div>";
       }
       return div;
-    };
-    
-    legend.addTo(map);
+    }; 
+// Add legend to map 
+
+legend.addTo(map);
+
