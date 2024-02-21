@@ -1,4 +1,4 @@
-// Dataset Observation
+// Datasets Observation
 
 fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson").then(
     response => response.json()
@@ -7,6 +7,7 @@ fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojso
     }).catch(error => {
         console.log("ErrorOccurred",error)
     })
+
 )
 
 fetch("https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json").then(
@@ -16,6 +17,7 @@ fetch("https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB
     }).catch(error => {
         console.log("ErrorOccurred",error)
     })
+
 )
 
 
@@ -27,25 +29,30 @@ let url2 ="https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSO
 
 let streetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19
+
 });
 
 // Define the base satelliteMap layer
 
 let satelliteMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
   maxZoom: 19
+
 });
 
 // Define the base outdoorMap layer
 
 let outdoorMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
   maxZoom: 17
+
 });
 
 // Create a Leaflet map
+
 let map = L.map("map", {
     center : [0,0],
     zoom : 3,
     layers : [streetMap,satelliteMap,outdoorMap]
+
 });
 
 let baseLayers = {
@@ -54,11 +61,6 @@ let baseLayers = {
     "Outdoor Map" : outdoorMap
 
 };
-
-
-
-let earthquakeLayer = L.layerGroup();
-let tectonicPlateLayer = L.layerGroup();
 
 // DepthColor Function
 
@@ -79,7 +81,13 @@ function DepthColor(depth){
         color = colorList[5];
     }
     return color;
+
 }
+
+// Setting Layer Groups for Earthquakes and Tectonic Plates
+
+let earthquakeLayer = L.layerGroup();
+let tectonicPlateLayer = L.layerGroup();
 
 // EarthQuakes Function
 
@@ -99,7 +107,8 @@ fetch(url)
         layer.bindPopup(`Magnitude ${feature.properties.mag} <br> Location: ${feature.properties.place}`);
       }
     }).addTo(earthquakeLayer);
-  });
+
+});
 
 
 // Tettonique plaque map 
@@ -113,16 +122,24 @@ fetch(url2)
         weight: 2
       }
     }).addTo(tectonicPlateLayer);
+
 });
+
+// Setting Overlayers
 
 let overlayLayers = {
     "Earthquakes": earthquakeLayer,
     "Tectonic Plates": tectonicPlateLayer
+
 };
 
-L.control.layers(baseLayers, overlayLayers).addTo(map);
-streetMap.addTo(map);
+// Layers Control setup 
 
+L.control.layers(baseLayers, overlayLayers).addTo(map);
+
+// Base Layer 
+
+streetMap.addTo(map);
 
 // Create a legend control
 
@@ -143,9 +160,12 @@ legend.onAdd = function (map) {
           '; width: 20px; height: 20px; display: inline-block;"></span> ' +
           depthRanges[i] +
           "</div>";
-      }
-      return div;
-    }; 
+
+    }
+    return div;
+
+}; 
+
 // Add legend to map 
 
 legend.addTo(map);
